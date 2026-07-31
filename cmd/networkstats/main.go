@@ -26,7 +26,7 @@ func main() {
 
 	blockScanner := scanner.New(client)
 
-	blocks, err := blockScanner.ReadLastBlocks(ctx, 10)
+	blocks, err := blockScanner.ReadLastBlocks(ctx, 100)
 	if err != nil {
 		log.Fatalf("Scan error: %v", err)
 	}
@@ -34,7 +34,7 @@ func main() {
 	fmt.Println("Connected.")
 	fmt.Println()
 
-	fmt.Println("Last 10 network blocks")
+	fmt.Println("Last 100 network blocks")
 	fmt.Println("--------------------------------------------------------------------------------")
 	fmt.Printf(
 		"%-10s %-18s %-14s %-10s %-8s %-5s\n",

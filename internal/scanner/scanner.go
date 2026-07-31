@@ -127,7 +127,7 @@ func (s *Scanner) ReadLastBlocks(
 
 func blockType(difficulty float64) string {
 	if difficulty < 1 {
-		return "CHEETAH"
+		return "LOW-DIFF"
 	}
 
 	return "NORMAL"

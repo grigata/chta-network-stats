@@ -68,7 +68,7 @@ func main() {
 	fmt.Println("============================================================")
 	fmt.Printf("Total Blocks   : %d\n", stats.TotalBlocks)
 	fmt.Printf("Normal Blocks  : %d\n", stats.NormalBlocks)
-	fmt.Printf("CHEETAH Blocks : %d\n", stats.CheetahBlocks)
+	fmt.Printf("LOW-DIFF Blocks: %d\n", stats.LowDiffBlocks)
 	fmt.Printf("Average Gap    : %.1f sec\n", stats.AverageGap)
 	fmt.Printf("Minimum Gap    : %d sec\n", stats.MinGap)
 	fmt.Printf("Maximum Gap    : %d sec\n", stats.MaxGap)
@@ -86,6 +86,9 @@ func main() {
 			pool.Percent,
 		)
 	}
+	fmt.Println()
+	fmt.Print("Press Enter to exit...")
+	fmt.Scanln()
 }
 
 func formatDifficulty(difficulty float64) string {

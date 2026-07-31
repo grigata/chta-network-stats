@@ -10,7 +10,7 @@ type Statistics struct {
 	TotalBlocks int
 
 	NormalBlocks  int
-	CheetahBlocks int
+	LowDiffBlocks int
 
 	AverageGap float64
 	MinGap     int64
@@ -38,8 +38,8 @@ func Calculate(blocks []models.NetworkBlock) Statistics {
 
 		stats.Pools[block.Pool]++
 
-		if block.Type == "CHEETAH" {
-			stats.CheetahBlocks++
+		if block.Type == "LOW-DIFF" {
+			stats.LowDiffBlocks++
 		} else {
 			stats.NormalBlocks++
 		}

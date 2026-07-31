@@ -1,0 +1,30 @@
+# Build
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Go
+bin/
+dist/
+build/
+coverage.out
+coverage.html
+
+# IDE
+.vscode/*
+!.vscode/launch.json
+!.vscode/tasks.json
+
+.idea/
+
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Temp
+*.log
+*.tmp
+*.bak

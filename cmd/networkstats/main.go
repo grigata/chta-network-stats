@@ -8,6 +8,7 @@ import (
 	"github.com/grigata/chta-network-stats/internal/config"
 	"github.com/grigata/chta-network-stats/internal/rpc"
 	"github.com/grigata/chta-network-stats/internal/scanner"
+	"github.com/grigata/chta-network-stats/internal/statistics"
 	"github.com/grigata/chta-network-stats/internal/version"
 )
 
@@ -30,6 +31,8 @@ func main() {
 	if err != nil {
 		log.Fatalf("Scan error: %v", err)
 	}
+
+	stats := statistics.Calculate(blocks)
 
 	fmt.Println("Connected.")
 	fmt.Println()
@@ -56,6 +59,31 @@ func main() {
 			block.Type,
 			block.Gap,
 			block.TxCount,
+		)
+	}
+
+	fmt.Println()
+	fmt.Println("============================================================")
+	fmt.Println("Network Statistics")
+	fmt.Println("============================================================")
+	fmt.Printf("Total Blocks   : %d\n", stats.TotalBlocks)
+	fmt.Printf("Normal Blocks  : %d\n", stats.NormalBlocks)
+	fmt.Printf("CHEETAH Blocks : %d\n", stats.CheetahBlocks)
+	fmt.Printf("Average Gap    : %.1f sec\n", stats.AverageGap)
+	fmt.Printf("Minimum Gap    : %d sec\n", stats.MinGap)
+	fmt.Printf("Maximum Gap    : %d sec\n", stats.MaxGap)
+
+	fmt.Println()
+	fmt.Println("Pool Distribution")
+	fmt.Println("----------------------------")
+
+	for _, pool := range statistics.SortedPools(stats) {
+
+		fmt.Printf(
+			"%-18s %3d (%5.1f%%)\n",
+			pool.Name,
+			pool.Blocks,
+			pool.Percent,
 		)
 	}
 }

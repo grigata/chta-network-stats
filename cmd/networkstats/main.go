@@ -33,21 +33,25 @@ func main() {
 
 	fmt.Println("Connected.")
 	fmt.Println()
+
 	fmt.Println("Last 10 network blocks")
-	fmt.Println("----------------------------------------------------------------")
-	fmt.Printf("%-10s %-14s %-10s %-8s %-5s\n",
+	fmt.Println("--------------------------------------------------------------------------------")
+	fmt.Printf(
+		"%-10s %-18s %-14s %-10s %-8s %-5s\n",
 		"Height",
+		"Pool",
 		"Difficulty",
 		"Type",
 		"Gap",
 		"Tx",
 	)
-	fmt.Println("----------------------------------------------------------------")
+	fmt.Println("--------------------------------------------------------------------------------")
 
 	for _, block := range blocks {
 		fmt.Printf(
-			"%-10d %-14s %-10s %+7ds %-5d\n",
+			"%-10d %-18s %-14s %-10s %+7ds %-5d\n",
 			block.Height,
+			block.Pool,
 			formatDifficulty(block.Difficulty),
 			block.Type,
 			block.Gap,

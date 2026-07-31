@@ -17,3 +17,18 @@ type Block struct {
 	NextBlockHash     string   `json:"nextblockhash"`
 	Tx                []string `json:"tx"`
 }
+
+type RawTransaction struct {
+	TxID     string `json:"txid"`
+	Hash     string `json:"hash"`
+	Version  int32  `json:"version"`
+	LockTime uint32 `json:"locktime"`
+
+	Vin []Vin `json:"vin"`
+
+	Vout []any `json:"vout"`
+}
+
+type Vin struct {
+	Coinbase string `json:"coinbase"`
+}

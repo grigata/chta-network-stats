@@ -34,3 +34,12 @@ func (c *Client) GetBlock(ctx context.Context, hash string) (*Block, error) {
 
 	return &block, nil
 }
+func (c *Client) GetRawTransaction(ctx context.Context, txid string) (*RawTransaction, error) {
+	var tx RawTransaction
+
+	if err := c.Call(ctx, "getrawtransaction", []any{txid, 1}, &tx); err != nil {
+		return nil, fmt.Errorf("get raw transaction %s: %w", txid, err)
+	}
+
+	return &tx, nil
+}

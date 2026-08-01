@@ -70,7 +70,11 @@ func main() {
 	stats := statistics.Calculate(blocks)
 
 	printBlockTable(blocks)
-	printStatistics(stats)
+	printStatistics(
+		stats,
+		source.Name,
+		scanDuration,
+	)
 
 	waitForEnter()
 }
@@ -152,7 +156,11 @@ func printBlockTable(blocks []models.NetworkBlock) {
 	}
 }
 
-func printStatistics(stats statistics.Statistics) {
+func printStatistics(
+	stats statistics.Statistics,
+	sourceName string,
+	scanDuration time.Duration,
+) {
 	fmt.Println()
 	fmt.Println("============================================================")
 	fmt.Println("Network Statistics")
@@ -163,6 +171,10 @@ func printStatistics(stats statistics.Statistics) {
 	fmt.Printf("Average Gap     : %.1f sec\n", stats.AverageGap)
 	fmt.Printf("Minimum Gap     : %d sec\n", stats.MinGap)
 	fmt.Printf("Maximum Gap     : %d sec\n", stats.MaxGap)
+	fmt.Println()
+
+	fmt.Printf("Data Source     : %s\n", sourceName)
+	fmt.Printf("Scan Time       : %.2f sec\n", scanDuration.Seconds())
 
 	fmt.Println()
 	fmt.Println("Pool Distribution")

@@ -5,34 +5,21 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/grigata/chta-network-stats/internal/config"
 	"github.com/grigata/chta-network-stats/internal/datasource"
+	"github.com/grigata/chta-network-stats/internal/models"
 	"github.com/grigata/chta-network-stats/internal/scanner"
 	"github.com/grigata/chta-network-stats/internal/statistics"
 	"github.com/grigata/chta-network-stats/internal/version"
 )
 
+const defaultBlockCount = 100
+
 func main() {
-	blockCount := 100
-
-	if len(os.Args) > 1 {
-		value, err := strconv.Atoi(os.Args[1])
-		if err != nil {
-			exitWithError(
-				"Invalid block count %q: expected a whole number",
-				os.Args[1],
-			)
-		}
-
-		if value <= 0 {
-			exitWithError("Block count must be greater than zero")
-		}
-
-		blockCount = value
-	}
-	fmt.Printf("%s v%s\n", version.AppName, version.AppVersion)
+	blockCount := readBlockCount()
 
 	cfg, err := config.Load("config.json")
 	if err != nil {
@@ -41,17 +28,19 @@ func main() {
 
 	ctx := context.Background()
 
-	fmt.Printf("Data source mode: %s\n", configMode(cfg.Mode))
-	fmt.Println("Connecting...")
+	fmt.Println("Connecting to Cheetahcoin network...")
 
 	source, err := datasource.Connect(ctx, cfg)
 	if err != nil {
 		exitWithError("Connection error: %v", err)
 	}
 
-	fmt.Printf("Connected using: %s\n", source.Name)
-	fmt.Printf("Current height : %d\n", source.Height)
-	fmt.Printf("Scanning last %d network blocks...\n", blockCount)
+	printStartup(
+		cfg.Mode,
+		source.Name,
+		source.Height,
+		blockCount,
+	)
 
 	blockScanner := scanner.New(source.Client)
 
@@ -80,8 +69,64 @@ func main() {
 
 	stats := statistics.Calculate(blocks)
 
+	printBlockTable(blocks)
+	printStatistics(stats)
+
+	waitForEnter()
+}
+
+func readBlockCount() int {
+	blockCount := defaultBlockCount
+
+	if len(os.Args) <= 1 {
+		return blockCount
+	}
+
+	value, err := strconv.Atoi(os.Args[1])
+	if err != nil {
+		exitWithError(
+			"Invalid block count %q: expected a whole number",
+			os.Args[1],
+		)
+	}
+
+	if value <= 0 {
+		exitWithError("Block count must be greater than zero")
+	}
+
+	return value
+}
+
+func printStartup(
+	mode string,
+	sourceName string,
+	height int64,
+	blockCount int,
+) {
 	fmt.Println()
-	fmt.Printf("Last %d network blocks\n", blockCount)
+	fmt.Println("============================================================")
+	fmt.Printf("%s v%s\n", version.AppName, version.AppVersion)
+	fmt.Println("============================================================")
+	fmt.Println()
+
+	fmt.Printf("Mode        : %s\n", strings.ToUpper(configMode(mode)))
+	fmt.Printf("Source      : %s\n", sourceName)
+	fmt.Printf("Height      : %d\n", height)
+	fmt.Printf("Blocks      : %d\n", blockCount)
+	fmt.Println()
+
+	if sourceName == "Cheetahcoin Public API" && blockCount >= 1000 {
+		fmt.Println("Warning:")
+		fmt.Println("Large scans through the Public API may take several minutes.")
+		fmt.Println()
+	}
+
+	fmt.Printf("Scanning last %d network blocks...\n", blockCount)
+}
+
+func printBlockTable(blocks []models.NetworkBlock) {
+	fmt.Println()
+	fmt.Printf("Last %d network blocks\n", len(blocks))
 	fmt.Println("--------------------------------------------------------------------------------")
 	fmt.Printf(
 		"%-10s %-18s %-14s %-10s %-8s %-5s\n",
@@ -105,7 +150,9 @@ func main() {
 			block.TxCount,
 		)
 	}
+}
 
+func printStatistics(stats statistics.Statistics) {
 	fmt.Println()
 	fmt.Println("============================================================")
 	fmt.Println("Network Statistics")
@@ -129,11 +176,11 @@ func main() {
 			pool.Percent,
 		)
 	}
-
-	waitForEnter()
 }
 
 func configMode(mode string) string {
+	mode = strings.TrimSpace(mode)
+
 	if mode == "" {
 		return "auto"
 	}

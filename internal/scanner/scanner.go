@@ -13,6 +13,7 @@ import (
 type Scanner struct {
 	client chain.Client
 }
+type ProgressFunc func(current, total int)
 
 func New(client chain.Client) *Scanner {
 	return &Scanner{
@@ -23,6 +24,7 @@ func New(client chain.Client) *Scanner {
 func (s *Scanner) ReadLastBlocks(
 	ctx context.Context,
 	count int,
+	progress ProgressFunc,
 ) ([]models.NetworkBlock, error) {
 	if count <= 0 {
 		return nil, fmt.Errorf("block count must be greater than zero")
@@ -124,6 +126,9 @@ func (s *Scanner) ReadLastBlocks(
 			CoinbaseHex:  coinbaseHex,
 			Pool:         pool,
 		})
+		if progress != nil {
+			progress(index+1, count)
+		}
 
 		currentBlock = previousBlock
 	}

@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strconv"
+	"time"
 
 	"github.com/grigata/chta-network-stats/internal/config"
 	"github.com/grigata/chta-network-stats/internal/datasource"
@@ -12,9 +14,24 @@ import (
 	"github.com/grigata/chta-network-stats/internal/version"
 )
 
-const blockCount = 100
-
 func main() {
+	blockCount := 100
+
+	if len(os.Args) > 1 {
+		value, err := strconv.Atoi(os.Args[1])
+		if err != nil {
+			exitWithError(
+				"Invalid block count %q: expected a whole number",
+				os.Args[1],
+			)
+		}
+
+		if value <= 0 {
+			exitWithError("Block count must be greater than zero")
+		}
+
+		blockCount = value
+	}
 	fmt.Printf("%s v%s\n", version.AppName, version.AppVersion)
 
 	cfg, err := config.Load("config.json")
@@ -38,10 +55,28 @@ func main() {
 
 	blockScanner := scanner.New(source.Client)
 
-	blocks, err := blockScanner.ReadLastBlocks(ctx, blockCount)
+	scanStarted := time.Now()
+
+	blocks, err := blockScanner.ReadLastBlocks(
+		ctx,
+		blockCount,
+		func(current, total int) {
+			fmt.Printf("\rScanning: %3d/%d", current, total)
+		},
+	)
+
+	fmt.Println()
+
 	if err != nil {
 		exitWithError("Scan error: %v", err)
 	}
+
+	scanDuration := time.Since(scanStarted)
+
+	fmt.Printf(
+		"Scan completed in %.2f seconds\n",
+		scanDuration.Seconds(),
+	)
 
 	stats := statistics.Calculate(blocks)
 

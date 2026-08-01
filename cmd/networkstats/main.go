@@ -3,35 +3,40 @@ package main
 import (
 	"context"
 	"fmt"
+	"os"
 
-	"github.com/grigata/chta-network-stats/internal/api"
+	"github.com/grigata/chta-network-stats/internal/config"
+	"github.com/grigata/chta-network-stats/internal/datasource"
 	"github.com/grigata/chta-network-stats/internal/scanner"
 	"github.com/grigata/chta-network-stats/internal/statistics"
 	"github.com/grigata/chta-network-stats/internal/version"
 )
 
-const (
-	blockCount = 100
-	apiURL     = "http://chtaexplorer.mooo.com:3002"
-)
+const blockCount = 100
 
 func main() {
 	fmt.Printf("%s v%s\n", version.AppName, version.AppVersion)
 
-	ctx := context.Background()
-
-	fmt.Println("Connecting to Cheetahcoin Public API...")
-
-	apiClient := api.NewClient(apiURL)
-
-	if _, err := apiClient.GetBlockCount(ctx); err != nil {
-		exitWithError("Public API connection error: %v", err)
+	cfg, err := config.Load("config.json")
+	if err != nil {
+		exitWithError("Configuration error: %v", err)
 	}
 
-	fmt.Println("Connected.")
+	ctx := context.Background()
+
+	fmt.Printf("Data source mode: %s\n", configMode(cfg.Mode))
+	fmt.Println("Connecting...")
+
+	source, err := datasource.Connect(ctx, cfg)
+	if err != nil {
+		exitWithError("Connection error: %v", err)
+	}
+
+	fmt.Printf("Connected using: %s\n", source.Name)
+	fmt.Printf("Current height : %d\n", source.Height)
 	fmt.Printf("Scanning last %d network blocks...\n", blockCount)
 
-	blockScanner := scanner.New(apiClient)
+	blockScanner := scanner.New(source.Client)
 
 	blocks, err := blockScanner.ReadLastBlocks(ctx, blockCount)
 	if err != nil {
@@ -70,12 +75,12 @@ func main() {
 	fmt.Println("============================================================")
 	fmt.Println("Network Statistics")
 	fmt.Println("============================================================")
-	fmt.Printf("Total Blocks   : %d\n", stats.TotalBlocks)
-	fmt.Printf("Normal Blocks  : %d\n", stats.NormalBlocks)
-	fmt.Printf("LOW-DIFF Blocks: %d\n", stats.LowDiffBlocks)
-	fmt.Printf("Average Gap    : %.1f sec\n", stats.AverageGap)
-	fmt.Printf("Minimum Gap    : %d sec\n", stats.MinGap)
-	fmt.Printf("Maximum Gap    : %d sec\n", stats.MaxGap)
+	fmt.Printf("Total Blocks    : %d\n", stats.TotalBlocks)
+	fmt.Printf("Normal Blocks   : %d\n", stats.NormalBlocks)
+	fmt.Printf("LOW-DIFF Blocks : %d\n", stats.LowDiffBlocks)
+	fmt.Printf("Average Gap     : %.1f sec\n", stats.AverageGap)
+	fmt.Printf("Minimum Gap     : %d sec\n", stats.MinGap)
+	fmt.Printf("Maximum Gap     : %d sec\n", stats.MaxGap)
 
 	fmt.Println()
 	fmt.Println("Pool Distribution")
@@ -91,6 +96,14 @@ func main() {
 	}
 
 	waitForEnter()
+}
+
+func configMode(mode string) string {
+	if mode == "" {
+		return "auto"
+	}
+
+	return mode
 }
 
 func formatDifficulty(difficulty float64) string {
@@ -112,6 +125,7 @@ func formatDifficulty(difficulty float64) string {
 func exitWithError(format string, args ...any) {
 	fmt.Printf("\nError: "+format+"\n", args...)
 	waitForEnter()
+	os.Exit(1)
 }
 
 func waitForEnter() {

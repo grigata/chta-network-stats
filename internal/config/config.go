@@ -13,8 +13,14 @@ type RPCConfig struct {
 	Password string `json:"password"`
 }
 
+type APIConfig struct {
+	BaseURL string `json:"base_url"`
+}
+
 type Config struct {
-	RPC RPCConfig `json:"rpc"`
+	Mode string    `json:"mode"`
+	RPC  RPCConfig `json:"rpc"`
+	API  APIConfig `json:"api"`
 }
 
 func Load(path string) (*Config, error) {

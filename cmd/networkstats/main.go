@@ -3,41 +3,45 @@ package main
 import (
 	"context"
 	"fmt"
-	"log"
 
-	"github.com/grigata/chta-network-stats/internal/config"
-	"github.com/grigata/chta-network-stats/internal/rpc"
+	"github.com/grigata/chta-network-stats/internal/api"
 	"github.com/grigata/chta-network-stats/internal/scanner"
 	"github.com/grigata/chta-network-stats/internal/statistics"
 	"github.com/grigata/chta-network-stats/internal/version"
 )
 
+const (
+	blockCount = 100
+	apiURL     = "http://chtaexplorer.mooo.com:3002"
+)
+
 func main() {
 	fmt.Printf("%s v%s\n", version.AppName, version.AppVersion)
 
-	cfg, err := config.Load("config.json")
-	if err != nil {
-		log.Fatalf("Configuration error: %v", err)
-	}
-
-	client := rpc.NewClient(cfg.RPC)
 	ctx := context.Background()
 
-	fmt.Println("Connecting to CHTA Core RPC...")
+	fmt.Println("Connecting to Cheetahcoin Public API...")
 
-	blockScanner := scanner.New(client)
+	apiClient := api.NewClient(apiURL)
 
-	blocks, err := blockScanner.ReadLastBlocks(ctx, 100)
+	if _, err := apiClient.GetBlockCount(ctx); err != nil {
+		exitWithError("Public API connection error: %v", err)
+	}
+
+	fmt.Println("Connected.")
+	fmt.Printf("Scanning last %d network blocks...\n", blockCount)
+
+	blockScanner := scanner.New(apiClient)
+
+	blocks, err := blockScanner.ReadLastBlocks(ctx, blockCount)
 	if err != nil {
-		log.Fatalf("Scan error: %v", err)
+		exitWithError("Scan error: %v", err)
 	}
 
 	stats := statistics.Calculate(blocks)
 
-	fmt.Println("Connected.")
 	fmt.Println()
-
-	fmt.Println("Last 100 network blocks")
+	fmt.Printf("Last %d network blocks\n", blockCount)
 	fmt.Println("--------------------------------------------------------------------------------")
 	fmt.Printf(
 		"%-10s %-18s %-14s %-10s %-8s %-5s\n",
@@ -78,7 +82,6 @@ func main() {
 	fmt.Println("----------------------------")
 
 	for _, pool := range statistics.SortedPools(stats) {
-
 		fmt.Printf(
 			"%-18s %3d (%5.1f%%)\n",
 			pool.Name,
@@ -86,9 +89,8 @@ func main() {
 			pool.Percent,
 		)
 	}
-	fmt.Println()
-	fmt.Print("Press Enter to exit...")
-	fmt.Scanln()
+
+	waitForEnter()
 }
 
 func formatDifficulty(difficulty float64) string {
@@ -105,4 +107,15 @@ func formatDifficulty(difficulty float64) string {
 	default:
 		return fmt.Sprintf("%.4f", difficulty)
 	}
+}
+
+func exitWithError(format string, args ...any) {
+	fmt.Printf("\nError: "+format+"\n", args...)
+	waitForEnter()
+}
+
+func waitForEnter() {
+	fmt.Println()
+	fmt.Print("Press Enter to exit...")
+	fmt.Scanln()
 }

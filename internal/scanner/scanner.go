@@ -5,16 +5,16 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/grigata/chta-network-stats/internal/chain"
 	"github.com/grigata/chta-network-stats/internal/models"
 	"github.com/grigata/chta-network-stats/internal/parser"
-	"github.com/grigata/chta-network-stats/internal/rpc"
 )
 
 type Scanner struct {
-	client *rpc.Client
+	client chain.Client
 }
 
-func New(client *rpc.Client) *Scanner {
+func New(client chain.Client) *Scanner {
 	return &Scanner{
 		client: client,
 	}

@@ -68,6 +68,7 @@ func main() {
 	)
 
 	stats := statistics.Calculate(blocks)
+	poolStats := statistics.AnalyzePools(blocks)
 
 	printBlockTable(blocks)
 	printStatistics(
@@ -75,6 +76,7 @@ func main() {
 		source.Name,
 		scanDuration,
 	)
+	printPoolAnalysis(poolStats)
 
 	waitForEnter()
 }
@@ -177,17 +179,7 @@ func printStatistics(
 	fmt.Printf("Scan Time       : %.2f sec\n", scanDuration.Seconds())
 
 	fmt.Println()
-	fmt.Println("Pool Distribution")
-	fmt.Println("----------------------------")
 
-	for _, pool := range statistics.SortedPools(stats) {
-		fmt.Printf(
-			"%-18s %3d (%5.1f%%)\n",
-			pool.Name,
-			pool.Blocks,
-			pool.Percent,
-		)
-	}
 }
 
 func configMode(mode string) string {
@@ -226,4 +218,34 @@ func waitForEnter() {
 	fmt.Println()
 	fmt.Print("Press Enter to exit...")
 	fmt.Scanln()
+}
+func printPoolAnalysis(pools []models.PoolStats) {
+
+	fmt.Println()
+	fmt.Println("============================================================")
+	fmt.Println("Pool Analysis")
+	fmt.Println("============================================================")
+
+	fmt.Printf(
+		"%-18s %6s %7s %10s %7s\n",
+		"Pool",
+		"Total",
+		"Normal",
+		"LOW-DIFF",
+		"%",
+	)
+
+	fmt.Println("------------------------------------------------------------")
+
+	for _, p := range pools {
+
+		fmt.Printf(
+			"%-18s %6d %7d %10d %6.1f%%\n",
+			p.Name,
+			p.TotalBlocks,
+			p.NormalBlocks,
+			p.LowDiffBlocks,
+			p.Percent,
+		)
+	}
 }

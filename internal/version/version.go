@@ -2,5 +2,5 @@ package version
 
 const (
 	AppName    = "CHTA Network Stats"
-	AppVersion = "0.1.0"
+	AppVersion = "0.2.0"
 )

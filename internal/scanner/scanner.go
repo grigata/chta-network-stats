@@ -37,58 +37,63 @@ func (s *Scanner) ReadLastBlocks(
 		count = int(latestHeight)
 	}
 
+	latestHash, err := s.client.GetBlockHash(ctx, latestHeight)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"get latest block hash at height %d: %w",
+			latestHeight,
+			err,
+		)
+	}
+
+	currentBlock, err := s.client.GetBlock(ctx, latestHash)
+	if err != nil {
+		return nil, fmt.Errorf(
+			"get latest block at height %d: %w",
+			latestHeight,
+			err,
+		)
+	}
+
 	blocks := make([]models.NetworkBlock, 0, count)
 
-	for height := latestHeight; height > latestHeight-int64(count); height-- {
+	for index := 0; index < count; index++ {
+		height := latestHeight - int64(index)
 
-		hash, err := s.client.GetBlockHash(ctx, height)
-		if err != nil {
-			return nil, fmt.Errorf(
-				"get block hash at height %d: %w",
-				height,
-				err,
-			)
-		}
-
-		block, err := s.client.GetBlock(ctx, hash)
-		if err != nil {
-			return nil, fmt.Errorf(
-				"get block at height %d: %w",
-				height,
-				err,
-			)
-		}
-
-		var gap int64
+		var (
+			gap           int64
+			previousBlock = currentBlock
+		)
 
 		if height > 0 {
-			previousHash, err := s.client.GetBlockHash(ctx, height-1)
+			if currentBlock.PreviousBlockHash == "" {
+				return nil, fmt.Errorf(
+					"block at height %d has no previous block hash",
+					height,
+				)
+			}
+
+			previousBlock, err = s.client.GetBlock(
+				ctx,
+				currentBlock.PreviousBlockHash,
+			)
 			if err != nil {
 				return nil, fmt.Errorf(
-					"get previous block hash at height %d: %w",
-					height-1,
+					"get previous block for height %d: %w",
+					height,
 					err,
 				)
 			}
 
-			previousBlock, err := s.client.GetBlock(ctx, previousHash)
-			if err != nil {
-				return nil, fmt.Errorf(
-					"get previous block at height %d: %w",
-					height-1,
-					err,
-				)
-			}
-
-			gap = block.Time - previousBlock.Time
+			gap = currentBlock.Time - previousBlock.Time
 		}
 
 		coinbaseTxID := ""
 		coinbaseHex := ""
 		pool := "Unknown"
 
-		if len(block.Tx) > 0 {
-			coinbaseTxID = block.Tx[0]
+		if len(currentBlock.Tx) > 0 {
+			coinbaseTxID = currentBlock.Tx[0]
 
 			tx, err := s.client.GetRawTransaction(ctx, coinbaseTxID)
 			if err != nil {
@@ -101,25 +106,26 @@ func (s *Scanner) ReadLastBlocks(
 
 			if len(tx.Vin) > 0 {
 				coinbaseHex = tx.Vin[0].Coinbase
-
 				coinbaseText := parser.DecodeCoinbaseText(coinbaseHex)
 				pool = parser.DetectPool(coinbaseText)
 			}
 		}
 
 		blocks = append(blocks, models.NetworkBlock{
-			Height:       block.Height,
-			Hash:         block.Hash,
-			Difficulty:   block.Difficulty,
-			Bits:         block.Bits,
-			Time:         time.Unix(block.Time, 0).Local(),
+			Height:       currentBlock.Height,
+			Hash:         currentBlock.Hash,
+			Difficulty:   currentBlock.Difficulty,
+			Bits:         currentBlock.Bits,
+			Time:         time.Unix(currentBlock.Time, 0).Local(),
 			Gap:          gap,
-			TxCount:      len(block.Tx),
-			Type:         blockType(block.Difficulty),
+			TxCount:      len(currentBlock.Tx),
+			Type:         blockType(currentBlock.Difficulty),
 			CoinbaseTxID: coinbaseTxID,
 			CoinbaseHex:  coinbaseHex,
 			Pool:         pool,
 		})
+
+		currentBlock = previousBlock
 	}
 
 	return blocks, nil

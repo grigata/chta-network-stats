@@ -64,13 +64,25 @@ RT-Pool               39      39       0
 Unknown               23      23       0
 ```
 
+
 ## Build
 
+### Windows (64-bit)
+
 ```bash
-go build -o bin/CHTA-NetworkStats.exe ./cmd/networkstats
+GOOS=windows GOARCH=amd64 go build -o bin/CHTA-NetworkStats.exe ./cmd/networkstats
 ```
+
+### Linux (64-bit)
+
 ```bash
-go build -o bin/CHTA-NetworkStats ./cmd/networkstats
+GOOS=linux GOARCH=amd64 go build -o bin/CHTA-NetworkStats ./cmd/networkstats
+```
+
+### Native build
+
+```bash
+go build ./cmd/networkstats
 ```
 
 ## Roadmap

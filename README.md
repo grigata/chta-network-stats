@@ -1,21 +1,35 @@
 # CHTA Network Stats
 
-A lightweight console and local web analyzer for the Cheetahcoin blockchain.
+A lightweight blockchain analytics tool for the Cheetahcoin network.
+
+It can scan blocks directly from a local CHTA Core node or automatically fall back to the public API, providing both a console report and a local interactive web dashboard.
+
+![Dashboard](docs/dashboard.png)
+
 
 ## Features
 
-- Local CHTA Core RPC support
-- Public API support
+
+### Data sources
+- Local CHTA Core RPC
+- Public API
 - Automatic source selection
+
+### Console
 - Network statistics
 - Pool analysis
 - LOW-DIFF detection
-- Configurable scan depth
-- Fast block scanner
 - Progress indicator
+- Configurable scan depth
+
+### Dashboard
 - Local dark web dashboard
-- Block table with direct Cheetahcoin Explorer links
-- Pool, block-type and logarithmic difficulty charts
+- Interactive block table
+- Explorer links
+- Difficulty charts
+- Pool distribution charts
+- Block-type charts
+
 
 ## Usage
 
@@ -35,13 +49,19 @@ Stop it with `Ctrl+C`. No blockchain data is sent anywhere by the dashboard.
 
 ```
 ============================================================
-CHTA Network Stats v0.2.0
+Network Statistics
 ============================================================
 
-Mode        : AUTO
-Source      : Local CHTA Core RPC
-Height      : 4971412
-Blocks      : 100
+Total Blocks    : 5000
+Normal Blocks   : 4995
+LOW-DIFF Blocks : 5
+
+Pool                Total  Normal  LOW-DIFF
+------------------------------------------------
+HeliosPool          4864    4859       5
+TinyWinyPool          74      74       0
+RT-Pool               39      39       0
+Unknown               23      23       0
 ```
 
 ## Build
@@ -49,8 +69,12 @@ Blocks      : 100
 ```bash
 go build -o bin/CHTA-NetworkStats.exe ./cmd/networkstats
 ```
+```bash
+go build -o bin/CHTA-NetworkStats ./cmd/networkstats
+```
 
 ## Roadmap
+
 
 ### v0.2.0
 - [x] Local CHTA Core RPC

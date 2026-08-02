@@ -28,3 +28,6 @@ Desktop.ini
 *.log
 *.tmp
 *.bak
+
+# Local configuration
+config.json

@@ -4,5 +4,8 @@
     "port": 8536,
     "user": "rpcuser",
     "password": "rpcpassword"
+  },
+  "api": {
+    "base_url": "http://chtaexplorer.mooo.com:3002"
   }
 }

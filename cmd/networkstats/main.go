@@ -4,11 +4,14 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"os/signal"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/grigata/chta-network-stats/internal/config"
+	"github.com/grigata/chta-network-stats/internal/dashboard"
 	"github.com/grigata/chta-network-stats/internal/datasource"
 	"github.com/grigata/chta-network-stats/internal/models"
 	"github.com/grigata/chta-network-stats/internal/scanner"
@@ -19,7 +22,11 @@ import (
 const defaultBlockCount = 100
 
 func main() {
-	blockCount := readBlockCount()
+	options, err := readOptions(os.Args[1:])
+	if err != nil {
+		exitWithError("%v", err)
+	}
+	blockCount := options.BlockCount
 
 	cfg, err := config.Load("config.json")
 	if err != nil {
@@ -70,37 +77,51 @@ func main() {
 	stats := statistics.Calculate(blocks)
 	poolStats := statistics.AnalyzePools(blocks)
 
-	printBlockTable(blocks)
-	printStatistics(
-		stats,
-		source.Name,
-		scanDuration,
-	)
-	printPoolAnalysis(poolStats)
+	if options.Web {
+		data := dashboard.NewData(source.Name, source.Height, scanDuration, blocks)
+		ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+		defer stop()
+		if err := dashboard.Serve(ctx, "127.0.0.1:8080", data, true); err != nil {
+			exitWithError("Web dashboard error: %v", err)
+		}
+		return
+	}
 
+	printBlockTable(blocks)
+	printStatistics(stats, source.Name, scanDuration)
+	printPoolAnalysis(poolStats)
 	waitForEnter()
 }
 
-func readBlockCount() int {
-	blockCount := defaultBlockCount
+type options struct {
+	Web        bool
+	BlockCount int
+}
 
-	if len(os.Args) <= 1 {
-		return blockCount
+func readOptions(args []string) (options, error) {
+	result := options{BlockCount: defaultBlockCount}
+	if len(args) == 0 {
+		return result, nil
 	}
-
-	value, err := strconv.Atoi(os.Args[1])
+	if strings.EqualFold(args[0], "web") {
+		result.Web = true
+		args = args[1:]
+	}
+	if len(args) == 0 {
+		return result, nil
+	}
+	if len(args) > 1 {
+		return result, fmt.Errorf("usage: CHTA-NetworkStats.exe [web] [block-count]")
+	}
+	value, err := strconv.Atoi(args[0])
 	if err != nil {
-		exitWithError(
-			"Invalid block count %q: expected a whole number",
-			os.Args[1],
-		)
+		return result, fmt.Errorf("invalid block count %q: expected a whole number", args[0])
 	}
-
 	if value <= 0 {
-		exitWithError("Block count must be greater than zero")
+		return result, fmt.Errorf("block count must be greater than zero")
 	}
-
-	return value
+	result.BlockCount = value
+	return result, nil
 }
 
 func printStartup(
